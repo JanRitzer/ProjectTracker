@@ -3,6 +3,7 @@ import { TaskBoard } from './components/TaskBoard';
 import { QuickNotes } from './components/QuickNotes';
 import { Auth } from './components/Auth';
 import { useAuth } from './hooks/useAuth';
+import { useUserProfile } from './hooks/useUserProfile';
 import { useSupabaseTasks } from './hooks/useSupabaseTasks';
 import { useSupabaseNotes } from './hooks/useSupabaseNotes';
 import { generateId } from './utils/helpers';
@@ -10,6 +11,7 @@ import styles from './App.module.css';
 
 function App() {
   const { user, loading: authLoading, signOut } = useAuth();
+  const { profile, loading: profileLoading } = useUserProfile(user?.id);
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({ priority: [], tags: [], dueDate: [] });
 
@@ -29,7 +31,7 @@ function App() {
   } = useSupabaseNotes(user?.id);
 
   // Show auth screen if not logged in
-  if (authLoading) {
+  if (authLoading || (user && profileLoading)) {
     return (
       <div className={styles.loading}>
         <div className={styles.spinner} />
@@ -41,6 +43,15 @@ function App() {
   if (!user) {
     return <Auth />;
   }
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return '☀️ Good morning';
+    if (hour < 18) return '🌤️ Good afternoon';
+    return '🌙 Good evening';
+  };
+
+  const displayName = profile?.username || user.user_metadata?.username || user.email.split('@')[0];
 
   // Task operations
   const handleAddTask = async (taskData) => {
@@ -131,7 +142,8 @@ function App() {
     <div className={styles.app}>
       <div className={styles.userHeader}>
         <div className={styles.userInfo}>
-          <span className={styles.userEmail}>{user.email}</span>
+          <span className={styles.greeting}>{getGreeting()},</span>
+          <span className={styles.username}>{displayName}</span>
         </div>
         <button onClick={handleSignOut} className={styles.signOutBtn}>
           Sign Out

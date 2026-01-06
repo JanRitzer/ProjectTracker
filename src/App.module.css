@@ -29,13 +29,24 @@
 .userInfo {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
+  gap: var(--space-sm);
 }
 
-.userEmail {
+.greeting {
   font-size: 14px;
   font-family: var(--font-body);
-  color: var(--color-text-secondary);
+  color: var(--color-text-tertiary);
+}
+
+.username {
+  font-size: 16px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  background: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .signOutBtn {

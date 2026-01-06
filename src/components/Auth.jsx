@@ -7,7 +7,9 @@ export function Auth() {
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [stayLoggedIn, setStayLoggedIn] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [passwordValidation, setPasswordValidation] = useState(null);
@@ -19,6 +21,13 @@ export function Auth() {
       setPasswordValidation(null);
     }
   }, [password, isSignUp]);
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return '☀️ Good morning';
+    if (hour < 18) return '🌤️ Good afternoon';
+    return '🌙 Good evening';
+  };
 
   const getFriendlyError = (errorMessage) => {
     if (errorMessage.includes('Invalid login credentials')) {
@@ -33,6 +42,9 @@ export function Auth() {
     if (errorMessage.includes('Password should be at least')) {
       return '⚠️ Password does not meet security requirements.';
     }
+    if (errorMessage.includes('Username')) {
+      return '⚠️ Username is already taken. Please choose another one.';
+    }
     return `❌ ${errorMessage}`;
   };
 
@@ -42,8 +54,20 @@ export function Auth() {
     setError(null);
     setSuccess(null);
 
-    // Validate password strength on signup
+    // Validate username on signup
     if (isSignUp) {
+      if (!username || username.trim().length < 3) {
+        setError('⚠️ Username must be at least 3 characters long.');
+        setLoading(false);
+        return;
+      }
+
+      if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+        setError('⚠️ Username can only contain letters, numbers, and underscores.');
+        setLoading(false);
+        return;
+      }
+
       const validation = validatePassword(password);
       if (!validation.isValid) {
         setError('⚠️ Password does not meet security requirements. Please use a stronger password.');
@@ -57,18 +81,28 @@ export function Auth() {
         const { error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            data: {
+              username: username.trim(),
+            },
+            emailRedirectTo: window.location.origin,
+          },
         });
         if (error) throw error;
-        setSuccess('✅ Account created! Check your email to confirm your account.');
+        setSuccess('✅ Account created! Check your email to confirm. You\'ll be logged in automatically after confirmation.');
         setEmail('');
+        setUsername('');
         setPassword('');
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
+          options: {
+            persistSession: stayLoggedIn,
+          },
         });
         if (error) throw error;
-        setSuccess('✅ Welcome back! Logging you in...');
+        setSuccess(`✅ Welcome back! Logging you in...`);
       }
     } catch (error) {
       setError(getFriendlyError(error.message));
@@ -85,11 +119,34 @@ export function Auth() {
         <div className={styles.header}>
           <h1 className={styles.title}>Project Tracker</h1>
           <p className={styles.subtitle}>
-            {isSignUp ? 'Create your account' : 'Welcome back'}
+            {isSignUp ? '✨ Create your account' : `${getGreeting()}! Welcome back`}
           </p>
         </div>
 
         <form onSubmit={handleAuth} className={styles.form}>
+          {isSignUp && (
+            <div className={styles.inputGroup}>
+              <label htmlFor="username" className={styles.label}>
+                Username
+              </label>
+              <input
+                id="username"
+                type="text"
+                placeholder="johndoe"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                minLength={3}
+                maxLength={20}
+                className={styles.input}
+                autoComplete="username"
+              />
+              <span className={styles.hint}>
+                3-20 characters, letters, numbers, and underscores only
+              </span>
+            </div>
+          )}
+
           <div className={styles.inputGroup}>
             <label htmlFor="email" className={styles.label}>
               Email
@@ -122,6 +179,20 @@ export function Auth() {
               autoComplete={isSignUp ? 'new-password' : 'current-password'}
             />
           </div>
+
+          {!isSignUp && (
+            <div className={styles.checkboxGroup}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={stayLoggedIn}
+                  onChange={(e) => setStayLoggedIn(e.target.checked)}
+                  className={styles.checkbox}
+                />
+                <span>Stay logged in</span>
+              </label>
+            </div>
+          )}
 
           {isSignUp && passwordValidation && (
             <div className={styles.passwordStrength}>
@@ -195,6 +266,7 @@ export function Auth() {
               setError(null);
               setSuccess(null);
               setPassword('');
+              setUsername('');
             }}
             className={styles.switchBtn}
           >
