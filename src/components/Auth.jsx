@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { validatePassword, getPasswordStrengthColor, getPasswordRequirementText } from '../utils/passwordValidator';
 import styles from './Auth.module.css';
 
 export function Auth() {
@@ -9,6 +10,15 @@ export function Auth() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [passwordValidation, setPasswordValidation] = useState(null);
+
+  useEffect(() => {
+    if (isSignUp && password) {
+      setPasswordValidation(validatePassword(password));
+    } else {
+      setPasswordValidation(null);
+    }
+  }, [password, isSignUp]);
 
   const getFriendlyError = (errorMessage) => {
     if (errorMessage.includes('Invalid login credentials')) {
@@ -21,7 +31,7 @@ export function Auth() {
       return '⚠️ This email is already registered. Try signing in instead.';
     }
     if (errorMessage.includes('Password should be at least')) {
-      return '⚠️ Password must be at least 6 characters long.';
+      return '⚠️ Password does not meet security requirements.';
     }
     return `❌ ${errorMessage}`;
   };
@@ -31,6 +41,16 @@ export function Auth() {
     setLoading(true);
     setError(null);
     setSuccess(null);
+
+    // Validate password strength on signup
+    if (isSignUp) {
+      const validation = validatePassword(password);
+      if (!validation.isValid) {
+        setError('⚠️ Password does not meet security requirements. Please use a stronger password.');
+        setLoading(false);
+        return;
+      }
+    }
 
     try {
       if (isSignUp) {
@@ -57,6 +77,8 @@ export function Auth() {
     }
   };
 
+  const requirementsList = getPasswordRequirementText();
+
   return (
     <div className={styles.container}>
       <div className={styles.card}>
@@ -80,6 +102,7 @@ export function Auth() {
               onChange={(e) => setEmail(e.target.value)}
               required
               className={styles.input}
+              autoComplete="email"
             />
           </div>
 
@@ -94,10 +117,47 @@ export function Auth() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              minLength={6}
+              minLength={8}
               className={styles.input}
+              autoComplete={isSignUp ? 'new-password' : 'current-password'}
             />
           </div>
+
+          {isSignUp && passwordValidation && (
+            <div className={styles.passwordStrength}>
+              <div className={styles.strengthHeader}>
+                <span className={styles.strengthLabel}>Password Strength:</span>
+                <span
+                  className={styles.strengthValue}
+                  style={{ color: getPasswordStrengthColor(passwordValidation.strength) }}
+                >
+                  {passwordValidation.strength.toUpperCase()}
+                </span>
+              </div>
+              <div
+                className={styles.strengthBar}
+                style={{
+                  background: getPasswordStrengthColor(passwordValidation.strength),
+                  width: passwordValidation.strength === 'strong' ? '100%' : passwordValidation.strength === 'medium' ? '66%' : '33%'
+                }}
+              />
+              <div className={styles.requirements}>
+                {requirementsList.map((req) => (
+                  <div
+                    key={req.key}
+                    className={`${styles.requirement} ${
+                      passwordValidation.requirements[req.key] ? styles.requirementMet : ''
+                    }`}
+                  >
+                    <span className={styles.requirementIcon}>
+                      {passwordValidation.requirements[req.key] ? '✓' : '○'}
+                    </span>
+                    <span className={styles.requirementText}>{req.text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className={styles.error}>
@@ -113,7 +173,7 @@ export function Auth() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (isSignUp && passwordValidation && !passwordValidation.isValid)}
             className={styles.submitBtn}
           >
             {loading ? (
@@ -134,6 +194,7 @@ export function Auth() {
               setIsSignUp(!isSignUp);
               setError(null);
               setSuccess(null);
+              setPassword('');
             }}
             className={styles.switchBtn}
           >

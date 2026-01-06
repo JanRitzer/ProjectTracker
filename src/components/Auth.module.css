@@ -138,6 +138,73 @@
   animation: slideIn 0.3s ease-out;
 }
 
+.passwordStrength {
+  padding: var(--space-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  animation: slideIn 0.3s ease-out;
+}
+
+.strengthHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-sm);
+}
+
+.strengthLabel {
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-display);
+  color: var(--color-text-secondary);
+}
+
+.strengthValue {
+  font-size: 12px;
+  font-weight: 800;
+  font-family: var(--font-display);
+  letter-spacing: 0.05em;
+}
+
+.strengthBar {
+  height: 4px;
+  border-radius: 2px;
+  transition: all var(--transition-base);
+  margin-bottom: var(--space-md);
+}
+
+.requirements {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.requirement {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 12px;
+  font-family: var(--font-body);
+  color: var(--color-text-tertiary);
+  transition: color var(--transition-fast);
+}
+
+.requirement.requirementMet {
+  color: var(--color-priority-low);
+}
+
+.requirementIcon {
+  font-size: 14px;
+  font-weight: 700;
+  width: 16px;
+  text-align: center;
+}
+
+.requirementText {
+  flex: 1;
+}
+
 .submitBtn {
   width: 100%;
   padding: var(--space-md) var(--space-lg);
