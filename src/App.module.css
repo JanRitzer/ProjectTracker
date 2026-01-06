@@ -8,7 +8,7 @@
     radial-gradient(circle at 40% 20%, rgba(247, 147, 30, 0.06) 0%, transparent 50%),
     var(--color-bg-primary);
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 /* Animated gradient orbs in background */
