@@ -1,0 +1,94 @@
+.board {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2xl);
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+.header {
+  margin-bottom: var(--space-xl);
+  animation: fadeIn 0.6s ease-out;
+}
+
+.title {
+  margin: 0 0 var(--space-lg) 0;
+  font-size: clamp(32px, 4vw, 48px);
+  font-weight: 800;
+  font-family: var(--font-display);
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-accent-tertiary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-lg);
+  flex: 1;
+  overflow: hidden;
+  animation: slideIn 0.8s ease-out;
+}
+
+.noResults {
+  text-align: center;
+  padding: var(--space-2xl) var(--space-lg);
+  background: var(--color-surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-xl);
+  animation: fadeIn 0.4s ease-out;
+}
+
+.noResults p {
+  margin: 0 0 var(--space-lg) 0;
+  font-size: 16px;
+  color: var(--color-text-secondary);
+  font-family: var(--font-body);
+}
+
+.clearFiltersBtn {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, var(--color-accent-primary) 0%, var(--color-accent-secondary) 100%);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-display);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-md);
+}
+
+.clearFiltersBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.clearFiltersBtn:active {
+  transform: translateY(0);
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+  .columns {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+
+  .board {
+    padding: var(--space-lg);
+  }
+
+  .title {
+    font-size: clamp(28px, 6vw, 36px);
+  }
+}

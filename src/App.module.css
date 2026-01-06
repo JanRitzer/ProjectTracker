@@ -1,0 +1,51 @@
+.app {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 20% 50%, rgba(255, 107, 53, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(0, 180, 216, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(247, 147, 30, 0.06) 0%, transparent 50%),
+    var(--color-bg-primary);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Animated gradient orbs in background */
+.app::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background:
+    radial-gradient(circle at 30% 40%, rgba(255, 107, 53, 0.03) 0%, transparent 25%),
+    radial-gradient(circle at 70% 60%, rgba(0, 180, 216, 0.03) 0%, transparent 25%);
+  animation: rotate 60s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive design */
+@media (max-width: 1280px) {
+  .app {
+    grid-template-columns: 1fr 320px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .app {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+}
