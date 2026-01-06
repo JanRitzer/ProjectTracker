@@ -1,43 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 
 export function useSupabaseNotes(userId) {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch notes from Supabase
-  useEffect(() => {
+  const fetchNotes = useCallback(async () => {
     if (!userId) {
       setNotes([]);
       setLoading(false);
       return;
     }
 
-    fetchNotes();
-
-    // Subscribe to real-time changes
-    const channel = supabase
-      .channel('notes_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notes',
-          filter: `user_id=eq.${userId}`,
-        },
-        () => {
-          fetchNotes();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [userId]);
-
-  const fetchNotes = async () => {
     try {
       const { data, error } = await supabase
         .from('notes')
@@ -60,9 +34,47 @@ export function useSupabaseNotes(userId) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
+
+  // Fetch notes from Supabase
+  useEffect(() => {
+    fetchNotes();
+
+    if (!userId) return;
+
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel(`notes_changes_${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notes',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          console.log('Real-time note update:', payload);
+          fetchNotes();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, fetchNotes]);
 
   const addNote = async (noteData) => {
+    // Optimistic update - add note immediately to UI
+    const newNote = {
+      id: noteData.id,
+      content: noteData.content,
+      createdAt: noteData.createdAt,
+    };
+
+    setNotes((prev) => [newNote, ...prev]);
+
     try {
       const { error } = await supabase.from('notes').insert([
         {
@@ -76,11 +88,17 @@ export function useSupabaseNotes(userId) {
       if (error) throw error;
     } catch (error) {
       console.error('Error adding note:', error);
+      // Rollback optimistic update on error
+      setNotes((prev) => prev.filter((n) => n.id !== noteData.id));
       throw error;
     }
   };
 
   const deleteNote = async (noteId) => {
+    // Optimistic update - remove note immediately from UI
+    const noteToDelete = notes.find((n) => n.id === noteId);
+    setNotes((prev) => prev.filter((note) => note.id !== noteId));
+
     try {
       const { error } = await supabase
         .from('notes')
@@ -91,6 +109,10 @@ export function useSupabaseNotes(userId) {
       if (error) throw error;
     } catch (error) {
       console.error('Error deleting note:', error);
+      // Rollback optimistic update on error
+      if (noteToDelete) {
+        setNotes((prev) => [...prev, noteToDelete]);
+      }
       throw error;
     }
   };

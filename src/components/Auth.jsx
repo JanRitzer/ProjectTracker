@@ -8,11 +8,29 @@ export function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+
+  const getFriendlyError = (errorMessage) => {
+    if (errorMessage.includes('Invalid login credentials')) {
+      return '❌ Invalid email or password. Please try again.';
+    }
+    if (errorMessage.includes('Email not confirmed')) {
+      return '⚠️ Please check your email and confirm your account first.';
+    }
+    if (errorMessage.includes('User already registered')) {
+      return '⚠️ This email is already registered. Try signing in instead.';
+    }
+    if (errorMessage.includes('Password should be at least')) {
+      return '⚠️ Password must be at least 6 characters long.';
+    }
+    return `❌ ${errorMessage}`;
+  };
 
   const handleAuth = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccess(null);
 
     try {
       if (isSignUp) {
@@ -21,16 +39,19 @@ export function Auth() {
           password,
         });
         if (error) throw error;
-        alert('Check your email for the confirmation link!');
+        setSuccess('✅ Account created! Check your email to confirm your account.');
+        setEmail('');
+        setPassword('');
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
+        setSuccess('✅ Welcome back! Logging you in...');
       }
     } catch (error) {
-      setError(error.message);
+      setError(getFriendlyError(error.message));
     } finally {
       setLoading(false);
     }
@@ -84,12 +105,25 @@ export function Auth() {
             </div>
           )}
 
+          {success && (
+            <div className={styles.success}>
+              {success}
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={loading}
             className={styles.submitBtn}
           >
-            {loading ? 'Loading...' : isSignUp ? 'Sign Up' : 'Sign In'}
+            {loading ? (
+              <span className={styles.loadingText}>
+                <span className={styles.spinner}></span>
+                {isSignUp ? 'Creating account...' : 'Signing in...'}
+              </span>
+            ) : (
+              isSignUp ? 'Sign Up' : 'Sign In'
+            )}
           </button>
         </form>
 
@@ -99,6 +133,7 @@ export function Auth() {
             onClick={() => {
               setIsSignUp(!isSignUp);
               setError(null);
+              setSuccess(null);
             }}
             className={styles.switchBtn}
           >

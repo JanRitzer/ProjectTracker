@@ -1,43 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 
 export function useSupabaseTasks(userId) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch tasks from Supabase
-  useEffect(() => {
+  const fetchTasks = useCallback(async () => {
     if (!userId) {
       setTasks([]);
       setLoading(false);
       return;
     }
 
-    fetchTasks();
-
-    // Subscribe to real-time changes
-    const channel = supabase
-      .channel('tasks_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'tasks',
-          filter: `user_id=eq.${userId}`,
-        },
-        () => {
-          fetchTasks();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [userId]);
-
-  const fetchTasks = async () => {
     try {
       const { data, error } = await supabase
         .from('tasks')
@@ -67,9 +41,55 @@ export function useSupabaseTasks(userId) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
+
+  // Fetch tasks from Supabase
+  useEffect(() => {
+    fetchTasks();
+
+    if (!userId) return;
+
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel(`tasks_changes_${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tasks',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          console.log('Real-time update:', payload);
+          // Refetch to ensure consistency
+          fetchTasks();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, fetchTasks]);
 
   const addTask = async (taskData) => {
+    // Optimistic update - add task immediately to UI
+    const newTask = {
+      id: taskData.id,
+      title: taskData.title,
+      description: taskData.description,
+      status: taskData.status,
+      priority: taskData.priority,
+      tags: taskData.tags || [],
+      subtasks: taskData.subtasks || [],
+      dueDate: taskData.dueDate,
+      createdAt: taskData.createdAt,
+      updatedAt: taskData.updatedAt,
+    };
+
+    setTasks((prev) => [newTask, ...prev]);
+
     try {
       const { error } = await supabase.from('tasks').insert([
         {
@@ -90,11 +110,26 @@ export function useSupabaseTasks(userId) {
       if (error) throw error;
     } catch (error) {
       console.error('Error adding task:', error);
+      // Rollback optimistic update on error
+      setTasks((prev) => prev.filter((t) => t.id !== taskData.id));
       throw error;
     }
   };
 
   const updateTask = async (taskId, updates) => {
+    // Optimistic update - update task immediately in UI
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === taskId
+          ? {
+              ...task,
+              ...updates,
+              updatedAt: new Date().toISOString(),
+            }
+          : task
+      )
+    );
+
     try {
       const { error } = await supabase
         .from('tasks')
@@ -114,11 +149,17 @@ export function useSupabaseTasks(userId) {
       if (error) throw error;
     } catch (error) {
       console.error('Error updating task:', error);
+      // Refetch on error to restore correct state
+      fetchTasks();
       throw error;
     }
   };
 
   const deleteTask = async (taskId) => {
+    // Optimistic update - remove task immediately from UI
+    const taskToDelete = tasks.find((t) => t.id === taskId);
+    setTasks((prev) => prev.filter((task) => task.id !== taskId));
+
     try {
       const { error } = await supabase
         .from('tasks')
@@ -129,6 +170,10 @@ export function useSupabaseTasks(userId) {
       if (error) throw error;
     } catch (error) {
       console.error('Error deleting task:', error);
+      // Rollback optimistic update on error
+      if (taskToDelete) {
+        setTasks((prev) => [...prev, taskToDelete]);
+      }
       throw error;
     }
   };
