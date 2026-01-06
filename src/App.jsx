@@ -1,32 +1,49 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { TaskBoard } from './components/TaskBoard';
 import { QuickNotes } from './components/QuickNotes';
-import { useLocalStorage } from './hooks/useLocalStorage';
-import { generateId, migrateTask } from './utils/helpers';
+import { Auth } from './components/Auth';
+import { useAuth } from './hooks/useAuth';
+import { useSupabaseTasks } from './hooks/useSupabaseTasks';
+import { useSupabaseNotes } from './hooks/useSupabaseNotes';
+import { generateId } from './utils/helpers';
 import styles from './App.module.css';
 
 function App() {
-  const [tasks, setTasks] = useLocalStorage('project-tracker-tasks', []);
+  const { user, loading: authLoading, signOut } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({ priority: [], tags: [], dueDate: [] });
 
-  // Migrate tasks on mount to ensure backward compatibility
-  useEffect(() => {
-    if (tasks.length > 0) {
-      const migratedTasks = tasks.map(migrateTask);
-      // Only update if there are tasks without new fields
-      const needsMigration = tasks.some(
-        task => task.priority === undefined || task.tags === undefined || task.subtasks === undefined
-      );
-      if (needsMigration) {
-        setTasks(migratedTasks);
-      }
-    }
-  }, []); // Run only once on mount
-  const [notes, setNotes] = useLocalStorage('project-tracker-notes', []);
+  const {
+    tasks,
+    loading: tasksLoading,
+    addTask,
+    updateTask,
+    deleteTask,
+  } = useSupabaseTasks(user?.id);
+
+  const {
+    notes,
+    loading: notesLoading,
+    addNote,
+    deleteNote,
+  } = useSupabaseNotes(user?.id);
+
+  // Show auth screen if not logged in
+  if (authLoading) {
+    return (
+      <div className={styles.loading}>
+        <div className={styles.spinner} />
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Auth />;
+  }
 
   // Task operations
-  const handleAddTask = (taskData) => {
+  const handleAddTask = async (taskData) => {
     const newTask = {
       id: generateId(),
       ...taskData,
@@ -35,51 +52,92 @@ function App() {
       tags: taskData.tags || [],
       subtasks: taskData.subtasks || [],
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
-    setTasks([...tasks, newTask]);
+
+    try {
+      await addTask(newTask);
+    } catch (error) {
+      console.error('Failed to add task:', error);
+      alert('Failed to add task. Please try again.');
+    }
   };
 
-  const handleDeleteTask = (taskId) => {
-    setTasks(tasks.filter((task) => task.id !== taskId));
+  const handleDeleteTask = async (taskId) => {
+    try {
+      await deleteTask(taskId);
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+      alert('Failed to delete task. Please try again.');
+    }
   };
 
-  const handleEditTask = (taskId, updatedData) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === taskId
-          ? { ...task, ...updatedData, updatedAt: new Date().toISOString() }
-          : task
-      )
-    );
+  const handleEditTask = async (taskId, updatedData) => {
+    try {
+      await updateTask(taskId, {
+        ...updatedData,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('Failed to update task:', error);
+      alert('Failed to update task. Please try again.');
+    }
   };
 
-  const handleMoveTask = (taskId, newStatus) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === taskId
-          ? { ...task, status: newStatus, updatedAt: new Date().toISOString() }
-          : task
-      )
-    );
+  const handleMoveTask = async (taskId, newStatus) => {
+    try {
+      await updateTask(taskId, {
+        status: newStatus,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('Failed to move task:', error);
+      alert('Failed to move task. Please try again.');
+    }
   };
 
   // Note operations
-  const handleAddNote = (content) => {
+  const handleAddNote = async (content) => {
     const newNote = {
       id: generateId(),
       content,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
-    setNotes([...notes, newNote]);
+
+    try {
+      await addNote(newNote);
+    } catch (error) {
+      console.error('Failed to add note:', error);
+      alert('Failed to add note. Please try again.');
+    }
   };
 
-  const handleDeleteNote = (noteId) => {
-    setNotes(notes.filter((note) => note.id !== noteId));
+  const handleDeleteNote = async (noteId) => {
+    try {
+      await deleteNote(noteId);
+    } catch (error) {
+      console.error('Failed to delete note:', error);
+      alert('Failed to delete note. Please try again.');
+    }
+  };
+
+  const handleSignOut = async () => {
+    if (confirm('Are you sure you want to sign out?')) {
+      await signOut();
+    }
   };
 
   return (
     <div className={styles.app}>
+      <div className={styles.userHeader}>
+        <div className={styles.userInfo}>
+          <span className={styles.userEmail}>{user.email}</span>
+        </div>
+        <button onClick={handleSignOut} className={styles.signOutBtn}>
+          Sign Out
+        </button>
+      </div>
+
       <TaskBoard
         tasks={tasks}
         onAddTask={handleAddTask}
