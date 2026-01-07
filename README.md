@@ -6,6 +6,24 @@ A modern, real-time project management tool designed for personal productivity. 
 
 **Live Demo**: [https://project-tracker-gamma-three.vercel.app](https://project-tracker-gamma-three.vercel.app)
 
+## 📸 Screenshots
+
+### Main Dashboard
+![Task Board](screenshots/task-board.png)
+*Kanban-style task board with priority levels, tags, and drag-and-drop functionality*
+
+### Authentication
+![Login Screen](screenshots/login.png)
+*Secure login with personalized greetings and "Stay logged in" option*
+
+### Task Details
+![Task Card](screenshots/task-card.png)
+*Rich task cards with priority, tags, subtasks, and due dates*
+
+### Search & Filter
+![Search and Filter](screenshots/search-filter.png)
+*Advanced filtering by priority, tags, and keywords*
+
 ## ✨ Features
 
 ### Task Management
