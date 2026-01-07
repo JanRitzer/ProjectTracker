@@ -16,6 +16,11 @@ dist-ssr
 .env
 .env.local
 
+# R/RStudio files
+.Rhistory
+.RData
+.Rproj.user
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
