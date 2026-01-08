@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { TaskBoard } from './components/TaskBoard';
+import { CalendarView } from './components/CalendarView';
+import { ViewToggle } from './components/ViewToggle';
 import { QuickNotes } from './components/QuickNotes';
 import { Auth } from './components/Auth';
 import { useAuth } from './hooks/useAuth';
@@ -12,6 +14,7 @@ import styles from './App.module.css';
 function App() {
   const { user, loading: authLoading, signOut } = useAuth();
   const { profile, loading: profileLoading } = useUserProfile(user?.id);
+  const [viewMode, setViewMode] = useState('board');
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({ priority: [], tags: [], dueDate: [] });
 
@@ -145,22 +148,34 @@ function App() {
           <span className={styles.greeting}>{getGreeting()},</span>
           <span className={styles.username}>{displayName}</span>
         </div>
-        <button onClick={handleSignOut} className={styles.signOutBtn}>
-          Sign Out
-        </button>
+        <div className={styles.headerActions}>
+          <ViewToggle currentView={viewMode} onViewChange={setViewMode} />
+          <button onClick={handleSignOut} className={styles.signOutBtn}>
+            Sign Out
+          </button>
+        </div>
       </div>
 
-      <TaskBoard
-        tasks={tasks}
-        onAddTask={handleAddTask}
-        onDeleteTask={handleDeleteTask}
-        onEditTask={handleEditTask}
-        onMoveTask={handleMoveTask}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        filters={filters}
-        onFiltersChange={setFilters}
-      />
+      {viewMode === 'board' ? (
+        <TaskBoard
+          tasks={tasks}
+          onAddTask={handleAddTask}
+          onDeleteTask={handleDeleteTask}
+          onEditTask={handleEditTask}
+          onMoveTask={handleMoveTask}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          filters={filters}
+          onFiltersChange={setFilters}
+        />
+      ) : (
+        <CalendarView
+          tasks={tasks}
+          onAddTask={handleAddTask}
+          onDeleteTask={handleDeleteTask}
+          onEditTask={handleEditTask}
+        />
+      )}
       <QuickNotes
         notes={notes}
         onAddNote={handleAddNote}

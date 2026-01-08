@@ -1,0 +1,66 @@
+.viewToggle {
+  position: relative;
+  display: inline-flex;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.toggleButton {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  z-index: 2;
+  min-width: 110px;
+  justify-content: center;
+}
+
+.toggleButton:hover {
+  color: var(--color-text-primary);
+}
+
+.toggleButton.active {
+  color: var(--color-text-primary);
+}
+
+.icon {
+  font-size: 1.1em;
+}
+
+.slider {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  height: calc(100% - 8px);
+  background: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-secondary));
+  border-radius: 8px;
+  transition: transform var(--transition-smooth);
+  z-index: 1;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .toggleButton {
+    min-width: 90px;
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--font-size-xs);
+  }
+
+  .icon {
+    font-size: 1em;
+  }
+}
